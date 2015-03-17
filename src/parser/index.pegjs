@@ -24,11 +24,14 @@ comment
         return {type: 'comment', value: text.split('\n')};
     }
 
+////////////////////
+// html tag start //
+////////////////////
 html
-    = '<' name: identifier __ attr: html_attr? __ '>' __ tags: tags __ '</' close: identifier & {
+    = '<' name: identifier __ attr: html_attr? __ '>' __ tags: tags? __ '</' close: identifier & {
         return close === name;
     } _ '>' {
-        return {type: 'html', name: name, attributes: attr, children: tags, selfClosing: false};
+        return {type: 'html', name: name, attributes: attr, children: tags || [], selfClosing: false};
     }
     / '<' name: identifier __ attr: html_attr? __ '/>' {
         return {type: 'html', name: name, attributes: attr, selfClosing: true};
@@ -39,28 +42,81 @@ html_attr
         return rest.unshift(first) && rest;
     }
 
+
 ha 'html attribute'
     = name: identifier __ '=' __ value: hav {
         return {type: 'html_attribute', name: name, value: value}
     }
-
-hav 'html attribute value'
-    = quoted_string / $(![ \'\">] .)+ {
-        return text();
-    }
-
-handlebars
-    = '{{#' name: identifier __ '}}' __ tags: tags __ '{{/' close: identifier & {
+    / '{{#' name: identifier __ attr: hbs_attr? __ '}}' __ children: html_attr? __ '{{/' close: identifier & {
         return name === close;
     } _ '}}' {
-        return {type: 'handlebars', name: name, attributes: '', children: tags, selfClosing: false};
+        return {type: 'handlebars', name: name, attributes: attr, children: children || [], selfClosing: false};
     }
-    / '{{{' name: identifier __ '}}}' {
-        return {type: 'handlebars', name: name, attributes: '', selfClosing: true, unescape: true}
+
+hav 'html attribute value'
+    = "'" q: sqhav "'" {return q;}
+    / '"' q: dqhav '"' {return q;}
+    / '""' {return null;} / "''" {return null;}
+    / $(![ \'\">] .)+ {
+        return [{type: 'text', value: text()}];
     }
-    / '{{' name: identifier __ '}}' {
-        return {type: 'handlebars', name: name, attributes: '', selfClosing: true}
+
+sqhav 'single quoted html attribute value'
+    = first: sqhavc rest: sqhavc* {
+        return rest.unshift(first) && rest;
     }
+
+sqhavc 'single quoted html attribute value child'
+    = text: $(!(tag_start / "'") .)+ {
+        return {type: 'text', value: text};
+    }
+    / handlebars
+
+dqhav 'double quoted html attribute value'
+    = first: dqhavc rest: dqhavc* {
+        return rest.unshift(first) && rest;
+    }
+
+dqhavc 'single quoted html attribute value child'
+    = text: $(!(tag_start / '"') .)+ {
+        return {type: 'text', value: text};
+    }
+    / handlebars
+//////////////////
+// html tag end //
+//////////////////
+
+handlebars
+    = '{{#' name: identifier __ attr: hbs_attr? __ '}}' __ tags: tags? __ '{{/' close: identifier & {
+        return name === close;
+    } _ '}}' {
+        return {type: 'handlebars', name: name, attributes: attr, children: tags || [], selfClosing: false};
+    }
+    / '{{{' name: ai __ attr: hbs_attr? __ '}}}' {
+        return {type: 'handlebars', name: name, attributes: attr, selfClosing: true, unescape: true}
+    }
+    / '{{' name: ai __ attr: hbs_attr? __ '}}' {
+        return {type: 'handlebars', name: name, attributes: attr, selfClosing: true}
+    }
+
+hbs_attr 'handlebars attributes'
+    = first: hbsa rest: (__ h: hbsa {return h;})* {
+        return rest.unshift(first) && rest;
+    }
+
+hbsa 'handlebars attribute'
+    = key: hbsak value: (__ '=' __ v: hbsav {return v})? {
+        return {type: 'handlebars_attribute', name: key, value: value}
+    }
+
+hbsak 'handlebars attribute key'
+    = ai / number / quoted_string
+
+hbsav 'handlebars attribute value'
+    = ai / number / quoted_string
+
+ai "Attribute identifier"
+    = [a-zA-Z$@_] [a-zA-Z0-9$@_.-]* { return text(); }
 
 text_tag
     = text: $(!tag_start .)+ {
@@ -121,6 +177,31 @@ ec "Escaped char"
     / '"' / "'" / '\\'
     / c: [bnfrt] { return '\\' + c; }
     / 'b' { return '\x0B' }
+
+number
+    = sign:[+-]? n: number_def {
+        return sign === '-' ? -n : n;
+    }
+
+number_def
+    = '0x'i [0-9a-f]i+ {
+        return parseInt(text(), 16);
+    }
+    / '0' [0-7]+ {
+        return parseInt(text(), 8);
+    }
+    / int? '.' [0-9]+ exponent?  {
+        return parseFloat(text())
+    }
+    / int exponent? {
+        return parseFloat(text())
+    }
+
+int
+    = [1-9] [0-9]*
+
+exponent
+    = 'e'i [+-]? int
 
 /////////////////////
 // basic rules end //
