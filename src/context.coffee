@@ -1,6 +1,6 @@
 module.exports = class Context
     constructor: (@indentToken = '    ', @newlineToken = '\n') ->
-        @results = []
+        @result = []
         @defaultLevel = 0
 
     getIndent: (level) ->
@@ -28,3 +28,6 @@ module.exports = class Context
 
     last: (length) ->
         @result.slice -length
+
+    getOutput: ->
+        @result.join('')

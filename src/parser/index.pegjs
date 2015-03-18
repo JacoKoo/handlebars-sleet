@@ -105,15 +105,14 @@ hbs_attr 'handlebars attributes'
     }
 
 hbsa 'handlebars attribute'
-    = key: hbsak value: (__ '=' __ v: hbsav {return v})? {
+    = key: hbsat value: (__ '=' __ v: hbsat {return v})? {
         return {type: 'handlebars_attribute', name: key, value: value}
     }
 
-hbsak 'handlebars attribute key'
-    = ai / number / quoted_string
-
-hbsav 'handlebars attribute value'
-    = ai / number / quoted_string
+hbsat 'handlebars attribute token'
+    = a: ai {return {type: 'identifier', value: a}; }
+    / n: number {return {type: 'number', value: n}; }
+    / s: quoted_string {return {type: 'quoted', value: s}; }
 
 ai "Attribute identifier"
     = [a-zA-Z$@_] [a-zA-Z0-9$@_.-]* { return text(); }
