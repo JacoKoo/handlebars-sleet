@@ -70,6 +70,7 @@ isTarget = (name, ext) ->
     path.extname(name).slice(1) is ext
 
 compileIt = (input, out, options) ->
+    console.log "#{new Date().toLocaleTimeString()} - Start to convert '#{input}'"
     content = fs.readFileSync(input, 'utf8')
     try
         output = convert content

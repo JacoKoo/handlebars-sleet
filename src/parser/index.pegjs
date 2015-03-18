@@ -36,12 +36,19 @@ html
     / '<' name: identifier __ attr: html_attr? __ '/>' {
         return {type: 'html', name: name, attributes: attr, selfClosing: true};
     }
+    / '<' name: self_closing __ attr: html_attr? __ '>' {
+        return {type: 'html', name: name, attributes: attr, selfClosing: true};
+    }
+
+self_closing 'Self-closing tags'
+    = 'area' / 'base' / 'br' / 'col' / 'command'
+    / 'embed' / 'hr' / 'img' / 'input' / 'keygen'
+    / 'link' / 'meta' / 'param' / 'source' / 'track' / 'wbr'
 
 html_attr
     = first: ha rest: (__ h: ha {return h;})* {
         return rest.unshift(first) && rest;
     }
-
 
 ha 'html attribute'
     = name: identifier __ '=' __ value: hav {
@@ -57,7 +64,7 @@ hav 'html attribute value'
     = "'" q: sqhav "'" {return q;}
     / '"' q: dqhav '"' {return q;}
     / '""' {return null;} / "''" {return null;}
-    / $(![ \'\">] .)+ {
+    / $(![ \'\">/] .)+ {
         return [{type: 'text', value: text()}];
     }
 
@@ -197,7 +204,7 @@ number_def
     }
 
 int
-    = [1-9] [0-9]*
+    = [1-9] [0-9]* / '0'
 
 exponent
     = 'e'i [+-]? int
