@@ -31,7 +31,7 @@ converter =
         context.indent(indent)
         if tag.value.length is 1
             return context.push('# ').push(tag.value[0]).eol()
-        context.indent(indent).push '#.'
+        context.push('#.').eol()
         context.indent(indent + 1).push(item.trim()).eol() for item in tag.value when item
 
     textTag: (tag, parent, indent, context, index) ->
