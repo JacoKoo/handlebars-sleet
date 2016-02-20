@@ -39,8 +39,8 @@ converter =
             return context.pop().push(' ').push(tag.value[0].trim()).eol()
         if tag.value.length is 1
             return context.indent(indent).push('| ').push(tag.value[0].trim()).eol()
-        context.indent(indent).push '|.'
-        context.indent(indent + 1).push(item.trim()).eol() for item in tag.value when item
+        context.pop().push('.').eol()
+        context.indent(indent).push(item.trim()).eol() for item in tag.value when item
 
     htmlTag: (tag, parent, indent, context, index) ->
         context.indent(indent).push(tag.name)
